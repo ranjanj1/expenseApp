@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Splitter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+        }
+        
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5a67d8;
+        }
+        
+        .btn-danger {
+            background: #e53e3e;
+            padding: 8px 12px;
+            width: auto;
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .btn-danger:hover {
+            background: #c53030;
+        }
+        
+        .person-item, .expense-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .checkbox-item input {
+            width: auto;
+            margin: 0;
+        }
+        
+        .balance-positive {
+            color: #38a169;
+            font-weight: bold;
+        }
+        
+        .balance-negative {
+            color: #e53e3e;
+            font-weight: bold;
+        }
+        
+        .balance-zero {
+            color: #666;
+        }
+        
+        .settlement {
+            background: #fef5e7;
+            border: 2px solid #f6ad55;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .settlement-amount {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #c05621;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Expense Splitter</h1>
+            <p>Split expenses fairly among your group</p>
+        </div>
+        
+        <div class="grid">
+            <!-- People Section -->
+            <div class="card">
+                <h2>👥 People</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="text" id="newPerson" placeholder="Add person..." style="margin-bottom: 0;">
+                    <button onclick="addPerson()" style="width: auto; padding: 12px 20px; margin-bottom: 0;">+</button>
+                </div>
+                <div id="peopleList"></div>
+            </div>
+            
+            <!-- Add Expense Section -->
+            <div class="card">
+                <h2>➕ Add Expense</h2>
+                <input type="text" id="expenseDesc" placeholder="Expense description...">
+                <input type="number" id="expenseAmount" placeholder="Amount" step="0.01">
+                <select id="expensePaidBy">
+                    <option value="">Who paid?</option>
+                </select>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600;">Split among:</label>
+                    <div id="splitCheckboxes" class="checkbox-group"></div>
+                </div>
+                <button onclick="addExpense()">Add Expense</button>
+            </div>
+        </div>
+        
+        <!-- Expenses List -->
+        <div id="expensesSection" class="card hidden">
+            <h2>💳 Expenses</h2>
+            <div id="expensesList"></div>
+        </div>
+        
+        <!-- Results -->
+        <div id="resultsSection" class="grid hidden">
+            <div class="card">
+                <h2>📊 Balances</h2>
+                <div id="balancesList"></div>
+            </div>
+            
+            <div class="card">
+                <h2>🔄 Who Owes Whom</h2>
+                <div id="settlementsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let people = ['Vishnu', 'Nicholas', 'Ranjan'];
+        let expenses = [];
+        
+        // Load data from cookies
+        function loadData() {
+            try {
+                const savedData = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('expenseData='));
+                
+                if (savedData) {
+                    const data = JSON.parse(decodeURIComponent(savedData.split('=')[1]));
+                    if (data.people && data.people.length > 0) {
+                        people = data.people;
+                    }
+                    if (data.expenses) {
+                        expenses = data.expenses;
+                    }
+                }
+            } catch (error) {
+                console.log('No saved data found, using defaults');
+            }
+        }
+        
+        // Save data to cookies
+        function saveData() {
+            const dataToSave = { people: people, expenses: expenses };
+            const expiryDate = new Date();
+            expiryDate.setTime(expiryDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+            document.cookie = `expenseData=${encodeURIComponent(JSON.stringify(dataToSave))}; expires=${expiryDate.toUTCString()}; path=/`;
+        }
+        
+        // Add person
+        function addPerson() {
+            const input = document.getElementById('newPerson');
+            const name = input.value.trim();
+            if (name && !people.includes(name)) {
+                people.push(name);
+                input.value = '';
+                saveData();
+                updateUI();
+            }
+        }
+        
+        // Remove person
+        function removePerson(name) {
+            people = people.filter(p => p !== name);
+            expenses = expenses.filter(e => e.paidBy !== name);
+            saveData();
+            updateUI();
+        }
+        
+        // Add expense
+        function addExpense() {
+            const desc = document.getElementById('expenseDesc').value.trim();
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const paidBy = document.getElementById('expensePaidBy').value;
+            const splitAmong = [];
+            
+            document.querySelectorAll('#splitCheckboxes input:checked').forEach(checkbox => {
+                splitAmong.push(checkbox.value);
+            });
+            
+            if (desc && amount && paidBy && splitAmong.length > 0) {
+                expenses.push({
+                    id: Date.now(),
+                    description: desc,
+                    amount: amount,
+                    paidBy: paidBy,
+                    splitAmong: splitAmong
+                });
+                
+                // Clear form
+                document.getElementById('expenseDesc').value = '';
+                document.getElementById('expenseAmount').value = '';
+                document.getElementById('expensePaidBy').value = '';
+                document.querySelectorAll('#splitCheckboxes input').forEach(cb => cb.checked = false);
+                
+                saveData();
+                updateUI();
+            }
+        }
+        
+        // Remove expense
+        function removeExpense(id) {
+            expenses = expenses.filter(e => e.id !== id);
+            saveData();
+            updateUI();
+        }
+        
+        // Calculate balances
+        function calculateBalances() {
+            const balances = {};
+            people.forEach(person => {
+                balances[person] = 0;
+            });
+            
+            expenses.forEach(expense => {
+                const splitAmount = expense.amount / expense.splitAmong.length;
+                balances[expense.paidBy] += expense.amount;
+                expense.splitAmong.forEach(person => {
+                    balances[person] -= splitAmount;
+                });
+            });
+            
+            return balances;
+        }
+        
+        // Calculate settlements
+        function calculateSettlements() {
+            const balances = calculateBalances();
+            const settlements = [];
+            
+            const creditors = [];
+            const debtors = [];
+            
+            Object.entries(balances).forEach(([person, balance]) => {
+                if (balance > 0.01) {
+                    creditors.push({ person, amount: balance });
+                } else if (balance < -0.01) {
+                    debtors.push({ person, amount: -balance });
+                }
+            });
+            
+            creditors.sort((a, b) => b.amount - a.amount);
+            debtors.sort((a, b) => b.amount - a.amount);
+            
+            let i = 0, j = 0;
+            while (i < creditors.length && j < debtors.length) {
+                const creditor = creditors[i];
+                const debtor = debtors[j];
+                
+                const settleAmount = Math.min(creditor.amount, debtor.amount);
+                
+                if (settleAmount > 0.01) {
+                    settlements.push({
+                        from: debtor.person,
+                        to: creditor.person,
+                        amount: settleAmount
+                    });
+                }
+                
+                creditor.amount -= settleAmount;
+                debtor.amount -= settleAmount;
+                
+                if (creditor.amount < 0.01) i++;
+                if (debtor.amount < 0.01) j++;
+            }
+            
+            return settlements;
+        }
+        
+        // Update UI
+        function updateUI() {
+            // Update people list
+            const peopleList = document.getElementById('peopleList');
+            peopleList.innerHTML = people.map(person => `
+                <div class="person-item">
+                    <span style="font-weight: 600;">${person}</span>
+                    <button class="btn-danger" onclick="removePerson('${person}')">Remove</button>
+                </div>
+            `).join('');
+            
+            // Update paid by dropdown
+            const paidBySelect = document.getElementById('expensePaidBy');
+            paidBySelect.innerHTML = '<option value="">Who paid?</option>' + 
+                people.map(person => `<option value="${person}">${person}</option>`).join('');
+            
+            // Update split checkboxes
+            const splitCheckboxes = document.getElementById('splitCheckboxes');
+            splitCheckboxes.innerHTML = people.map(person => `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="split_${person}" value="${person}">
+                    <label for="split_${person}">${person}</label>
+                </div>
+            `).join('');
+            
+            // Update expenses list
+            const expensesSection = document.getElementById('expensesSection');
+            const expensesList = document.getElementById('expensesList');
+            
+            if (expenses.length > 0) {
+                expensesSection.classList.remove('hidden');
+                expensesList.innerHTML = expenses.map(expense => `
+                    <div class="expense-item">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 5px;">${expense.description}</div>
+                            <div style="color: #666; font-size: 14px;">$${expense.amount.toFixed(2)} paid by ${expense.paidBy}</div>
+                            <div style="color: #666; font-size: 12px;">Split among: ${expense.splitAmong.join(', ')} ($${(expense.amount / expense.splitAmong.length).toFixed(2)} each)</div>
+                        </div>
+                        <button class="btn-danger" onclick="removeExpense(${expense.id})">Delete</button>
+                    </div>
+                `).join('');
+            } else {
+                expensesSection.classList.add('hidden');
+            }
+            
+            // Update results
+            const resultsSection = document.getElementById('resultsSection');
+            if (expenses.length > 0) {
+                resultsSection.classList.remove('hidden');
+                
+                // Update balances
+                const balances = calculateBalances();
+                const balancesList = document.getElementById('balancesList');
+                balancesList.innerHTML = Object.entries(balances).map(([person, balance]) => `
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e1e1e1;">
+                        <span style="font-weight: 600;">${person}</span>
+                        <span class="${balance > 0 ? 'balance-positive' : balance < 0 ? 'balance-negative' : 'balance-zero'}">
+                            ${balance > 0 ? '+' : ''}$${balance.toFixed(2)}
+                        </span>
+                    </div>
+                `).join('');
+                
+                // Update settlements
+                const settlements = calculateSettlements();
+                const settlementsList = document.getElementById('settlementsList');
+                
+                if (settlements.length === 0) {
+                    settlementsList.innerHTML = '<div class="empty-state">All settled up! 🎉</div>';
+                } else {
+                    settlementsList.innerHTML = settlements.map(settlement => `
+                        <div class="settlement">
+                            <div style="font-weight: 600; margin-bottom: 5px;">
+                                ${settlement.from} owes ${settlement.to}
+                            </div>
+                            <div class="settlement-amount">$${settlement.amount.toFixed(2)}</div>
+                        </div>
+                    `).join('');
+                }
+            } else {
+                resultsSection.classList.add('hidden');
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            updateUI();
+            
+            // Add enter key support
+            document.getElementById('newPerson').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addPerson();
+            });
+        });
+    </script>
+</body>
+</html>
