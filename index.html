@@ -288,27 +288,27 @@
         }
         
         // Add person
-        window.addPerson = function() {
+        window.addPerson = async function() {
             const input = document.getElementById('newPerson');
             const name = input.value.trim();
             if (name && !people.includes(name)) {
                 people.push(name);
                 input.value = '';
-                saveData();
+                await saveData();
                 updateUI();
             }
         }
         
         // Remove person
-        window.removePerson = function(name) {
+        window.removePerson = async function(name) {
             people = people.filter(p => p !== name);
             expenses = expenses.filter(e => e.paidBy !== name);
-            saveData();
+            await saveData();
             updateUI();
         }
         
         // Add expense
-        window.addExpense = function() {
+        window.addExpense = async function() {
             const desc = document.getElementById('expenseDesc').value.trim();
             const amount = parseFloat(document.getElementById('expenseAmount').value);
             const paidBy = document.getElementById('expensePaidBy').value;
@@ -333,15 +333,15 @@
                 document.getElementById('expensePaidBy').value = '';
                 document.querySelectorAll('#splitCheckboxes input').forEach(cb => cb.checked = false);
                 
-                saveData();
+                await saveData();
                 updateUI();
             }
         }
         
         // Remove expense
-        window.removeExpense = function(id) {
+        window.removeExpense = async function(id) {
             expenses = expenses.filter(e => e.id !== id);
-            saveData();
+            await saveData();
             updateUI();
         }
         
