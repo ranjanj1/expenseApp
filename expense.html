@@ -237,15 +237,13 @@
         let people = ['Vishnu', 'Nicholas', 'Ranjan'];
         let expenses = [];
         
-        // Load data from cookies
+        // Load data from localStorage
         function loadData() {
             try {
-                const savedData = document.cookie
-                    .split('; ')
-                    .find(row => row.startsWith('expenseData='));
+                const savedData = localStorage.getItem('expenseData');
                 
                 if (savedData) {
-                    const data = JSON.parse(decodeURIComponent(savedData.split('=')[1]));
+                    const data = JSON.parse(savedData);
                     if (data.people && data.people.length > 0) {
                         people = data.people;
                     }
@@ -258,12 +256,10 @@
             }
         }
         
-        // Save data to cookies
+        // Save data to localStorage
         function saveData() {
             const dataToSave = { people: people, expenses: expenses };
-            const expiryDate = new Date();
-            expiryDate.setTime(expiryDate.getTime() + (30 * 24 * 60 * 60 * 1000));
-            document.cookie = `expenseData=${encodeURIComponent(JSON.stringify(dataToSave))}; expires=${expiryDate.toUTCString()}; path=/`;
+            localStorage.setItem('expenseData', JSON.stringify(dataToSave));
         }
         
         // Add person
