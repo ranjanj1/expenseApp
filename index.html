@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Splitter</title>
+    <title>Arizona Trip Expenses</title>
     <style>
         * {
             margin: 0;
@@ -181,8 +181,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>💰 Expense Splitter</h1>
-            <p>Split expenses fairly among your group</p>
+            <h1>🌵 Arizona Trip Expenses</h1>
+            <p>Splitting desert adventure costs fairly</p>
         </div>
         
         <div class="grid">
@@ -232,18 +232,37 @@
         </div>
     </div>
 
-    <script>
+    <!-- Firebase CDN -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyDzW9OiWU4w2b8I1h02XoHCFJ-3NXhhqt4",
+          authDomain: "expenseapp-e22f4.firebaseapp.com",
+          projectId: "expenseapp-e22f4",
+          storageBucket: "expenseapp-e22f4.firebasestorage.app",
+          messagingSenderId: "891054591544",
+          appId: "1:891054591544:web:93be92f1d986131b5560cd"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         // Data storage
         let people = ['Vishnu', 'Nicholas', 'Ranjan'];
         let expenses = [];
         
-        // Load data from localStorage
-        function loadData() {
+        // Load data from Firestore
+        async function loadData() {
             try {
-                const savedData = localStorage.getItem('expenseData');
+                const docRef = doc(db, 'expenses', 'main');
+                const docSnap = await getDoc(docRef);
                 
-                if (savedData) {
-                    const data = JSON.parse(savedData);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
                     if (data.people && data.people.length > 0) {
                         people = data.people;
                     }
@@ -251,19 +270,25 @@
                         expenses = data.expenses;
                     }
                 }
+                updateUI();
             } catch (error) {
                 console.log('No saved data found, using defaults');
+                updateUI();
             }
         }
         
-        // Save data to localStorage
-        function saveData() {
-            const dataToSave = { people: people, expenses: expenses };
-            localStorage.setItem('expenseData', JSON.stringify(dataToSave));
+        // Save data to Firestore
+        async function saveData() {
+            try {
+                const dataToSave = { people: people, expenses: expenses };
+                await setDoc(doc(db, 'expenses', 'main'), dataToSave);
+            } catch (error) {
+                console.error('Error saving data:', error);
+            }
         }
         
         // Add person
-        function addPerson() {
+        window.addPerson = function() {
             const input = document.getElementById('newPerson');
             const name = input.value.trim();
             if (name && !people.includes(name)) {
@@ -275,7 +300,7 @@
         }
         
         // Remove person
-        function removePerson(name) {
+        window.removePerson = function(name) {
             people = people.filter(p => p !== name);
             expenses = expenses.filter(e => e.paidBy !== name);
             saveData();
@@ -283,7 +308,7 @@
         }
         
         // Add expense
-        function addExpense() {
+        window.addExpense = function() {
             const desc = document.getElementById('expenseDesc').value.trim();
             const amount = parseFloat(document.getElementById('expenseAmount').value);
             const paidBy = document.getElementById('expensePaidBy').value;
@@ -314,7 +339,7 @@
         }
         
         // Remove expense
-        function removeExpense(id) {
+        window.removeExpense = function(id) {
             expenses = expenses.filter(e => e.id !== id);
             saveData();
             updateUI();
@@ -466,9 +491,8 @@
         }
         
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadData();
-            updateUI();
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadData();
             
             // Add enter key support
             document.getElementById('newPerson').addEventListener('keypress', function(e) {
